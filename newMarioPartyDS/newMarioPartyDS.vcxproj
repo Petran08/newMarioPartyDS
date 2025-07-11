@@ -129,9 +129,11 @@
   <ItemGroup>
     <ClCompile Include="boardTiles.cpp" />
     <ClCompile Include="newMarioPartyDS.cpp" />
+    <ClCompile Include="player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="boardTiles.h" />
+    <ClInclude Include="player.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
