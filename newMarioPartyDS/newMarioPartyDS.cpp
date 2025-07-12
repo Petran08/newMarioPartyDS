@@ -226,14 +226,14 @@ void initTiles()
     initTile.type = "red";
     initTile.nextTile[0] = 2;
     initTile.jumpOnNext = true;
-    initTile.jumpHeight = 4;
+    initTile.jumpHeight = 8;
     tiles.push_back(initTile);
 
-    initTile.position = { 3.0f, 3.0f, 3.0f };
+    initTile.position = { 3.0f, 6.0f, 3.0f };
     initTile.type = "green";
     initTile.nextTile[0] = 0;
     initTile.jumpOnNext = true;
-    initTile.jumpHeight = 4;
+    initTile.jumpHeight = 8;
     tiles.push_back(initTile);
 }
 
