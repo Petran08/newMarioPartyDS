@@ -5,6 +5,9 @@
 #include <cmath>
 #include <vector>
 #include <sstream>
+#include <fstream>
+
+std::ofstream fout("position.dbg");
 
 enum class gameState {
     MENU,
@@ -23,35 +26,111 @@ float cameraSpeed = 0.2f;
 float playerSpeed = 120.0f; // time to go to next tile in frames(120fps)
 Vector3 forward = Vector3Subtract(camera.target, camera.position);
 Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
+bool aboveTile = false;
 Vector3 move = { 0 };
 short int currentTile = 0;
 float speedx, speedy, speedz;
 bool isMoving = false;
+float x, y, a, b, xt, yt; // for jumping
 
 player myPlayer;
+bool pointsAreClose(Vector3 p1, Vector3 p2)
+{
+    Vector3 dif = Vector3Subtract(p1, p2);
+    return (fabsf(dif.x) <= 0.01f && fabsf(dif.y) <= 0.01f && fabsf(dif.z) <= 0.01f);
+}
+
+float distXZ(Vector3 p1, Vector3 p2)
+{
+    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.z - p2.z) * (p1.z - p2.z));
+}
+
+float returny(float x)
+{
+    return a * (x * x) + b * x;
+}
+
+bool passedTile()
+{
+    if ((tiles[tiles[currentTile].nextTile[0]].position.x - myPlayer.position.x) / speedx <= 0 || /*(tiles[tiles[currentTile].nextTile[0]].position.y - myPlayer.position.y) / speedy <= 0 ||*/ (tiles[tiles[currentTile].nextTile[0]].position.z - myPlayer.position.z) / speedz <= 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void updatePlayerPos()
+{
+    if (isMoving && (!pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) && !passedTile()))
+    {
+        myPlayer.position.x += speedx;
+        myPlayer.position.z += speedz;
+        if (aboveTile)
+        {
+            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position));
+        }
+        else
+        {
+            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[currentTile].position));
+        }
+        camera.target = myPlayer.position;
+        fout << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << " " << currentTile << '\n';
+    }
+    else if (isMoving && (pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) || passedTile()))
+    {
+        myPlayer.position.x = round(myPlayer.position.x);
+        myPlayer.position.y = round(myPlayer.position.y);
+        myPlayer.position.z = round(myPlayer.position.z);
+        currentTile = tiles[currentTile].nextTile[0];
+        isMoving = false;
+    }
+    else
+    {
+        speedx = 0;
+        //speedy = 0;
+        speedz = 0;
+        a = 0;
+        b = 0;
+    }
+}
 
 void movePlayer()
 {
     Vector3 startpos = myPlayer.position;
     Vector3 endpos = tiles[tiles[currentTile].nextTile[0]].position;
     speedx = (endpos.x - startpos.x) / playerSpeed;
-    speedy = (endpos.y - startpos.y) / playerSpeed;
+    //speedy = (endpos.y - startpos.y) / playerSpeed;
     speedz = (endpos.z - startpos.z) / playerSpeed;
     isMoving = true;
+    if (tiles[currentTile].jumpOnNext)
+    {
+        yt = abs(- myPlayer.position.y + tiles[tiles[currentTile].nextTile[0]].position.y);
+        xt = distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position);
+        xt += xt / 8;
+        x = xt / 2;
+        y = yt + tiles[currentTile].jumpHeight;
+        if(tiles[tiles[currentTile].nextTile[0]].position.y - tiles[currentTile].position.y >=0)
+        {
+            aboveTile = false;
+        }
+        else
+        {
+            aboveTile = true;
+        }
+        b = (2 * y) / x;
+        a = -y / (x * x);
+    }
 }
 
 void keyboardInput()
 {
-    if (IsKeyPressed(KEY_SPACE))
+    if (IsKeyPressed(KEY_SPACE) && !isMoving)
     {
         movePlayer();
     }
-}
-
-bool pointsAreClose(Vector3 p1, Vector3 p2)
-{
-    Vector3 dif = Vector3Subtract(p1, p2);
-    return (fabsf(dif.x) <= 0.005f && fabsf(dif.y) <= 0.005f && fabsf(dif.z) <= 0.005f);
 }
 
 void renderScreen(gameState state, Model model, Model player, Model tilesType[3])
@@ -70,7 +149,8 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
 
         move = Vector3Scale(Vector3Normalize(move), cameraSpeed);
         camera.position = Vector3Add(camera.position, move);
-
+        
+        //camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, 0.0f });
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -79,9 +159,9 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         DrawModel(model, modelPosition, 1.0f, WHITE);
 
         // Update rotation angles for smooth rotation
-        myPlayer.rotationX += 0.00f;
-        myPlayer.rotationY += 0.00f;
-        myPlayer.rotationZ += 0.00f;
+        myPlayer.rotationX = 0.00f;
+        myPlayer.rotationY = 0.00f;
+        myPlayer.rotationZ = 0.00f;
 
         // Create combined rotation matrix
         Matrix rotX = MatrixRotateX(myPlayer.rotationX);
@@ -124,6 +204,7 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         debug << "player pos: " << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << '\n';
         debug << "tile pos: " << tiles[tiles[currentTile].nextTile[0]].position.x << " " << tiles[tiles[currentTile].nextTile[0]].position.y << " " << tiles[tiles[currentTile].nextTile[0]].position.z << '\n';
         debug << "points are close: " << pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) << "\n";
+        debug << "passed tile: " << passedTile() << '\n';
 
         DrawText(debug.str().c_str(), 10, 10, 35, BLACK);
 
@@ -137,16 +218,22 @@ void initTiles()
     initTile.position = { 0.0f, 0.0f, 0.0f };
     initTile.type = "blue";
     initTile.nextTile[0] = 1;
+    initTile.jumpOnNext = false;
+    initTile.jumpHeight = 0;
     tiles.push_back(initTile);
 
     initTile.position = { 0.0f, 0.0f, 3.0f };
     initTile.type = "red";
     initTile.nextTile[0] = 2;
+    initTile.jumpOnNext = true;
+    initTile.jumpHeight = 4;
     tiles.push_back(initTile);
 
-    initTile.position = { 3.0f, 0.0f, 3.0f };
+    initTile.position = { 3.0f, 3.0f, 3.0f };
     initTile.type = "green";
     initTile.nextTile[0] = 0;
+    initTile.jumpOnNext = true;
+    initTile.jumpHeight = 4;
     tiles.push_back(initTile);
 }
 
@@ -184,24 +271,7 @@ int main()
         case gameState::BOARD:
             renderScreen(currentState, model, player, tileModel);
             keyboardInput();
-            if (isMoving && !pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position))
-            {
-                myPlayer.position.x += speedx;
-                myPlayer.position.y += speedy;
-                myPlayer.position.z += speedz;
-                camera.target = myPlayer.position;
-            }
-            else if (isMoving && pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position))
-            {
-                currentTile = tiles[currentTile].nextTile[0];
-                isMoving = false;
-            }
-            else
-            {
-                speedx = 0;
-                speedy = 0;
-                speedz = 0;
-            }
+            updatePlayerPos();
             break;
         case gameState::MINIGAME:
             // minigames

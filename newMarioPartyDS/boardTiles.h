@@ -10,6 +10,7 @@ public:
 	std::string type;
 	int nextTile[4];
 	bool jumpOnNext = false;
+	float jumpHeight;
 };
 
 extern std::vector<boardTiles>;
