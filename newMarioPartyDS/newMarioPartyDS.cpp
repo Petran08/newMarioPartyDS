@@ -6,6 +6,9 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <chrono>
+#include <thread>
+#include <iostream>
 
 std::ofstream fout("position.dbg");
 
@@ -32,6 +35,8 @@ short int currentTile = 0;
 float speedx, speedy, speedz;
 bool isMoving = false;
 float x, y, a, b, xt, yt; // for jumping
+short int direction = 0;
+Model tileModel[3];
 
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
@@ -52,7 +57,7 @@ float returny(float x)
 
 bool passedTile()
 {
-    if ((tiles[tiles[currentTile].nextTile[0]].position.x - myPlayer.position.x) / speedx <= 0 || /*(tiles[tiles[currentTile].nextTile[0]].position.y - myPlayer.position.y) / speedy <= 0 ||*/ (tiles[tiles[currentTile].nextTile[0]].position.z - myPlayer.position.z) / speedz <= 0)
+    if ((tiles[tiles[currentTile].nextTile[direction]].position.x - myPlayer.position.x) / speedx <= 0 || /*(tiles[tiles[currentTile].nextTile[0]].position.y - myPlayer.position.y) / speedy <= 0 ||*/ (tiles[tiles[currentTile].nextTile[direction]].position.z - myPlayer.position.z) / speedz <= 0)
     {
         return true;
     }
@@ -62,78 +67,7 @@ bool passedTile()
     }
 }
 
-void updatePlayerPos()
-{
-    if (isMoving && (!pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) && !passedTile()))
-    {
-        myPlayer.position.x += speedx;
-        myPlayer.position.z += speedz;
-        if (aboveTile)
-        {
-            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position));
-        }
-        else
-        {
-            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[currentTile].position));
-        }
-        camera.target = myPlayer.position;
-        fout << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << " " << currentTile << '\n';
-    }
-    else if (isMoving && (pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) || passedTile()))
-    {
-        myPlayer.position.x = round(myPlayer.position.x);
-        myPlayer.position.y = round(myPlayer.position.y);
-        myPlayer.position.z = round(myPlayer.position.z);
-        currentTile = tiles[currentTile].nextTile[0];
-        isMoving = false;
-    }
-    else
-    {
-        speedx = 0;
-        //speedy = 0;
-        speedz = 0;
-        a = 0;
-        b = 0;
-    }
-}
-
-void movePlayer()
-{
-    Vector3 startpos = myPlayer.position;
-    Vector3 endpos = tiles[tiles[currentTile].nextTile[0]].position;
-    speedx = (endpos.x - startpos.x) / playerSpeed;
-    //speedy = (endpos.y - startpos.y) / playerSpeed;
-    speedz = (endpos.z - startpos.z) / playerSpeed;
-    isMoving = true;
-    if (tiles[currentTile].jumpOnNext)
-    {
-        yt = abs(- myPlayer.position.y + tiles[tiles[currentTile].nextTile[0]].position.y);
-        xt = distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position);
-        xt += xt / 8;
-        x = xt / 2;
-        y = yt + tiles[currentTile].jumpHeight;
-        if(tiles[tiles[currentTile].nextTile[0]].position.y - tiles[currentTile].position.y >=0)
-        {
-            aboveTile = false;
-        }
-        else
-        {
-            aboveTile = true;
-        }
-        b = (2 * y) / x;
-        a = -y / (x * x);
-    }
-}
-
-void keyboardInput()
-{
-    if (IsKeyPressed(KEY_SPACE) && !isMoving)
-    {
-        movePlayer();
-    }
-}
-
-void renderScreen(gameState state, Model model, Model player, Model tilesType[3])
+void renderScreen(gameState state, Model model, Model player, Model tilesType[3], std::string mode = "none")
 {
     if (state == gameState::BOARD)
     {
@@ -198,26 +132,176 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
             }
         }
 
+        if (mode == "debug")
+        {
+            float x = myPlayer.position.x, y = returny(0), z = myPlayer.position.z;
+            for (x = x, z = z; distXZ(Vector3{ x, 0.0f, z }, myPlayer.position) <= distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position); x += speedx, z += speedz)
+            {
+                DrawSphere(Vector3{ x, returny(distXZ(Vector3{ x, 0.0f, z }, myPlayer.position)) + tiles[currentTile].position.y, z}, 0.05f, RED);
+            }
+        }
+
         EndMode3D();
 
-        std::stringstream debug;
-        debug << "player pos: " << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << '\n';
-        debug << "tile pos: " << tiles[tiles[currentTile].nextTile[0]].position.x << " " << tiles[tiles[currentTile].nextTile[0]].position.y << " " << tiles[tiles[currentTile].nextTile[0]].position.z << '\n';
-        debug << "points are close: " << pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[0]].position) << "\n";
-        debug << "passed tile: " << passedTile() << '\n';
 
-        DrawText(debug.str().c_str(), 10, 10, 35, BLACK);
+        if(mode=="debug_text")
+        {
+            std::stringstream debug;
+            debug << "player pos: " << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << '\n';
+            debug << "tile pos: " << tiles[tiles[currentTile].nextTile[direction]].position.x << " " << tiles[tiles[currentTile].nextTile[direction]].position.y << " " << tiles[tiles[currentTile].nextTile[direction]].position.z << '\n';
+            debug << "points are close: " << pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) << "\n";
+            debug << "passed tile: " << passedTile() << '\n';
+            debug << "maxDir: " << tiles[currentTile].maxDir << '\n';
+            debug << "direction: " << direction << '\n';
+
+            DrawText(debug.str().c_str(), 10, 10, 35, BLACK);
+        }
 
         EndDrawing();
+    }
+}
+
+void updatePlayerPos()
+{
+    if (isMoving && (!pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) && !passedTile()))
+    {
+        myPlayer.position.x += speedx;
+        myPlayer.position.z += speedz;
+        if (aboveTile && tiles[currentTile].jumpOnNext)
+        {
+            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[currentTile].position)) + tiles[currentTile].position.y;
+        }
+        else if(!aboveTile && tiles[currentTile].jumpOnNext)
+        {
+            myPlayer.position.y = returny(distXZ(myPlayer.position, tiles[currentTile].position)) + tiles[currentTile].position.y;
+        }
+        else
+        {
+            myPlayer.position.y += speedy;
+        }
+        camera.target = myPlayer.position;
+        fout << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << " " << currentTile << '\n';
+    }
+    else if (isMoving && (pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) || passedTile()))
+    {
+        myPlayer.position.x = round(myPlayer.position.x);
+        myPlayer.position.y = round(myPlayer.position.y);
+        myPlayer.position.z = round(myPlayer.position.z);
+        currentTile = tiles[currentTile].nextTile[direction];
+        direction = 0;
+        isMoving = false;
+    }
+    else
+    {
+        speedx = 0;
+        speedy = 0;
+        speedz = 0;
+        a = 0;
+        b = 0;
+    }
+}
+
+void movePlayer();
+
+bool keyboardInput()
+{
+    if (IsKeyPressed(KEY_SPACE) && !isMoving)
+    {
+        movePlayer();
+        return true;
+    }
+    if (IsKeyPressed(KEY_E) && tiles[currentTile].maxDir > 1 && pointsAreClose(myPlayer.position, tiles[currentTile].position))
+    {
+        direction++;
+        if (direction >= tiles[currentTile].maxDir)
+            direction = 0;
+    }
+    return false;
+}
+
+void movePlayer()
+{
+    Vector3 startpos = myPlayer.position;
+    Vector3 endpos = tiles[tiles[currentTile].nextTile[direction]].position;
+    speedx = (endpos.x - startpos.x) / playerSpeed;
+    speedy = (endpos.y - startpos.y) / playerSpeed;
+    speedz = (endpos.z - startpos.z) / playerSpeed;
+    isMoving = true;
+    
+    if (tiles[currentTile].maxDir > 1)
+    {
+        while (keyboardInput())
+        {
+            //currentState = currentState;
+        }
+    }
+    
+    if (tiles[currentTile].jumpOnNext)
+    {
+        if (tiles[tiles[currentTile].nextTile[direction]].position.y - tiles[currentTile].position.y >= 0)
+        {
+            aboveTile = false;
+        }
+        else
+        {
+            aboveTile = true;
+        }
+        
+        float currentPoint;
+        //isMoving = false;
+        if (!aboveTile)
+        {
+            yt = abs(- myPlayer.position.y + tiles[tiles[currentTile].nextTile[direction]].position.y);
+            xt = distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position);
+            //xt += xt / 8;
+            y = yt + tiles[currentTile].jumpHeight;
+            x = xt / 2;
+            b = (2 * y) / x;
+            a = -y / (x * x);
+            currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
+            while (abs(currentPoint-tiles[tiles[currentTile].nextTile[direction]].position.y)>=0.1f)
+            {
+                x = xt / 2;
+                b = (2 * y) / x;
+                a = -y / (x * x);
+                xt += 0.1f;
+                currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
+                //renderScreen(currentState, LoadModel("test_board.glb"), LoadModel("mario_model.glb"), tileModel, "debug");
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
+        else
+        {
+            yt = (-myPlayer.position.y + tiles[tiles[currentTile].nextTile[direction]].position.y);
+            xt = distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position);
+            //xt += xt / 8;
+            y = yt + tiles[currentTile].jumpHeight;
+            x = xt / 2;
+            b = (2 * y) / x;
+            a = -y / (x * x);
+            currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
+            while (abs(currentPoint - tiles[tiles[currentTile].nextTile[direction]].position.y) >= 0.3f)
+            {
+                x = xt / 2;
+                b = (2 * y) / x;
+                a = -y / (x * x);
+                xt -= 0.1f;
+                currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
+                //renderScreen(currentState, LoadModel("test_board.glb"), LoadModel("mario_model.glb"), tileModel, "debug");
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
     }
 }
 
 void initTiles()
 {
     boardTiles initTile;
+    
     initTile.position = { 0.0f, 0.0f, 0.0f };
     initTile.type = "blue";
     initTile.nextTile[0] = 1;
+    initTile.maxDir = 1;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
     tiles.push_back(initTile);
@@ -225,20 +309,49 @@ void initTiles()
     initTile.position = { 0.0f, 0.0f, 3.0f };
     initTile.type = "red";
     initTile.nextTile[0] = 2;
+    initTile.maxDir = 1;
     initTile.jumpOnNext = true;
-    initTile.jumpHeight = 8;
+    initTile.jumpHeight = 3;
     tiles.push_back(initTile);
 
-    initTile.position = { 3.0f, 6.0f, 3.0f };
+    initTile.position = { 3.0f, 3.0f, 3.0f };
     initTile.type = "green";
     initTile.nextTile[0] = 0;
+    initTile.nextTile[1] = 3;
+    initTile.maxDir = 2;
     initTile.jumpOnNext = true;
-    initTile.jumpHeight = 8;
+    initTile.jumpHeight = 4;
+    tiles.push_back(initTile);
+
+    initTile.position = { 6.0f, 2.0f, 3.0f };
+    initTile.type = "blue";
+    initTile.nextTile[0] = 4;
+    initTile.maxDir = 1;
+    initTile.jumpOnNext = true;
+    initTile.jumpHeight = 3;
+    tiles.push_back(initTile);
+    
+    initTile.position = { 6.0f, 0.0f, 6.0f };
+    initTile.type = "blue";
+    initTile.nextTile[0] = 5;
+    initTile.jumpOnNext = false;
+    initTile.jumpHeight = 0;
+    tiles.push_back(initTile);
+
+    initTile.position = { 3.0f, 0.0f, 6.0f };
+    initTile.type = "red";
+    initTile.nextTile[0] = 0;
+    initTile.nextTile[1] = 1;
+    initTile.maxDir = 2;
+    initTile.jumpOnNext = false;
+    initTile.jumpHeight = 0;
     tiles.push_back(initTile);
 }
 
 int main()
 {
+    fout << "just for debuging \n";
+
     initTiles();
 
     currentState = gameState::BOARD;
@@ -251,7 +364,9 @@ int main()
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
     Model model = LoadModel("test_board.glb");
     Model player = LoadModel("mario_model.glb");
-    Model tileModel[3] = { LoadModel("blue_tile.glb"), LoadModel("red_tile.glb"), LoadModel("green_tile.glb") };
+    tileModel[0] = LoadModel("blue_tile.glb");
+    tileModel[1] = LoadModel("red_tile.glb");
+    tileModel[2] = LoadModel("green_tile.glb");
 
     camera.position = { 5.0f, 5.0f, 5.0f };
     camera.target = { 0.0f, 0.0f, 0.0f };
@@ -269,7 +384,7 @@ int main()
             // menu
             break;
         case gameState::BOARD:
-            renderScreen(currentState, model, player, tileModel);
+            renderScreen(currentState, model, player, tileModel, "debug_text");
             keyboardInput();
             updatePlayerPos();
             break;
@@ -281,7 +396,7 @@ int main()
             break;
         }
     }
-
+    fout << "for debuging \n";
     UnloadModel(model);
     UnloadModel(player);
     for (int i = 0; i < 3; i++) UnloadModel(tileModel[i]);

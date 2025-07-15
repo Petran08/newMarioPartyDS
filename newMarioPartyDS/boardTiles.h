@@ -11,6 +11,7 @@ public:
 	int nextTile[4];
 	bool jumpOnNext = false;
 	float jumpHeight;
+	int maxDir = 1;
 };
 
 extern std::vector<boardTiles>;
