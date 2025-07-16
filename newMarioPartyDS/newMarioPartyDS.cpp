@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <random>
 
 std::ofstream fout("position.dbg");
 
@@ -37,6 +38,13 @@ bool isMoving = false;
 float x, y, a, b, xt, yt; // for jumping
 short int direction = 0;
 Model tileModel[3];
+Model model;
+Model playerModel;
+Model arrows[2];
+int tilesToMove = 0;
+bool choosingDirection = false;
+static std::random_device rd;
+static std::mt19937 gen(rd());
 
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
@@ -140,11 +148,26 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
                 DrawSphere(Vector3{ x, returny(distXZ(Vector3{ x, 0.0f, z }, myPlayer.position)) + tiles[currentTile].position.y, z}, 0.05f, RED);
             }
         }
+        else if (mode == "dirChoosing")
+        {
+            //DrawModel(arrows[1], Vector3{ 10.0f, 2.0f, 8.0f }, 0.2f, WHITE);
+            for (int i = 0; i < tiles[currentTile].maxDir; i++)
+            {
+                if (direction == i)
+                {
+                    DrawModelEx(arrows[0], tiles[tiles[currentTile].nextTile[i]].position, Vector3{0.0f, 1.0f, 0.0f}, 0.0f, Vector3{0.2f, 0.2f, 0.2f}, WHITE);
+                }
+                else
+                {
+                    DrawModelEx(arrows[1], tiles[tiles[currentTile].nextTile[i]].position, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 0.2f, 0.2f, 0.2f }, WHITE);
+                }
+            }
+        }
 
         EndMode3D();
 
 
-        if(mode=="debug_text")
+        if(mode=="debug_text" || mode == "dirChoosing")
         {
             std::stringstream debug;
             debug << "player pos: " << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << '\n';
@@ -153,6 +176,8 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
             debug << "passed tile: " << passedTile() << '\n';
             debug << "maxDir: " << tiles[currentTile].maxDir << '\n';
             debug << "direction: " << direction << '\n';
+            debug << "tiles to move: " << tilesToMove << '\n';
+            debug << "is moving: " << isMoving << '\n';
 
             DrawText(debug.str().c_str(), 10, 10, 35, BLACK);
         }
@@ -190,6 +215,7 @@ void updatePlayerPos()
         currentTile = tiles[currentTile].nextTile[direction];
         direction = 0;
         isMoving = false;
+        tilesToMove--;
     }
     else
     {
@@ -205,36 +231,55 @@ void movePlayer();
 
 bool keyboardInput()
 {
+    if (choosingDirection)
+    {
+        if (IsKeyPressed(KEY_E))
+        {
+            direction++;
+            if (direction >= tiles[currentTile].maxDir)
+                direction = 0;
+        }
+        if (IsKeyPressed(KEY_SPACE))  // Confirm direction
+        {
+            choosingDirection = false;
+            return true;  // Now allow movement
+        }
+        return false;  // Still choosing
+    }
+
     if (IsKeyPressed(KEY_SPACE) && !isMoving)
     {
-        movePlayer();
         return true;
     }
-    if (IsKeyPressed(KEY_E) && tiles[currentTile].maxDir > 1 && pointsAreClose(myPlayer.position, tiles[currentTile].position))
+    if (IsKeyPressed(KEY_Z) && tilesToMove == 0)
     {
-        direction++;
-        if (direction >= tiles[currentTile].maxDir)
-            direction = 0;
+        std::uniform_int_distribution<int> distr(1, 10);
+        int roll = distr(gen);
+        tilesToMove = roll;
     }
     return false;
 }
 
+
 void movePlayer()
 {
+
+    if (tiles[currentTile].maxDir > 1 && pointsAreClose(myPlayer.position, tiles[currentTile].position))
+    {
+        choosingDirection = true;
+        while (choosingDirection)
+        {
+            renderScreen(currentState, model, playerModel, tileModel, "dirChoosing");
+            keyboardInput();
+        }
+    }
+
     Vector3 startpos = myPlayer.position;
     Vector3 endpos = tiles[tiles[currentTile].nextTile[direction]].position;
     speedx = (endpos.x - startpos.x) / playerSpeed;
     speedy = (endpos.y - startpos.y) / playerSpeed;
     speedz = (endpos.z - startpos.z) / playerSpeed;
-    isMoving = true;
-    
-    if (tiles[currentTile].maxDir > 1)
-    {
-        while (keyboardInput())
-        {
-            //currentState = currentState;
-        }
-    }
+    isMoving = true;    
     
     if (tiles[currentTile].jumpOnNext)
     {
@@ -266,7 +311,7 @@ void movePlayer()
                 a = -y / (x * x);
                 xt += 0.1f;
                 currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
-                //renderScreen(currentState, LoadModel("test_board.glb"), LoadModel("mario_model.glb"), tileModel, "debug");
+                //renderScreen(currentState, model, playerModel, tileModel, "debug");
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
         }
@@ -287,7 +332,7 @@ void movePlayer()
                 a = -y / (x * x);
                 xt -= 0.1f;
                 currentPoint = returny(distXZ(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position)) + tiles[currentTile].position.y;
-                //renderScreen(currentState, LoadModel("test_board.glb"), LoadModel("mario_model.glb"), tileModel, "debug");
+                //renderScreen(currentState, model, playerModel, tileModel, "debug");
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
         }
@@ -362,11 +407,13 @@ int main()
     myPlayer.position = playerPosition;
 
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
-    Model model = LoadModel("test_board.glb");
-    Model player = LoadModel("mario_model.glb");
+    model = LoadModel("test_board.glb");
+    playerModel = LoadModel("mario_model.glb");
     tileModel[0] = LoadModel("blue_tile.glb");
     tileModel[1] = LoadModel("red_tile.glb");
     tileModel[2] = LoadModel("green_tile.glb");
+    arrows[0] = LoadModel("solid_arrow.glb");
+    arrows[1] = LoadModel("transparent_arrow.glb");
 
     camera.position = { 5.0f, 5.0f, 5.0f };
     camera.target = { 0.0f, 0.0f, 0.0f };
@@ -384,9 +431,17 @@ int main()
             // menu
             break;
         case gameState::BOARD:
-            renderScreen(currentState, model, player, tileModel, "debug_text");
+            renderScreen(currentState, model, playerModel, tileModel, "debug_text");
             keyboardInput();
-            updatePlayerPos();
+            if(!choosingDirection)
+            {
+                updatePlayerPos();
+            }
+            if (tilesToMove > 0 && !isMoving && !choosingDirection)
+            {
+                movePlayer();
+            }
+            
             break;
         case gameState::MINIGAME:
             // minigames
@@ -398,8 +453,9 @@ int main()
     }
     fout << "for debuging \n";
     UnloadModel(model);
-    UnloadModel(player);
+    UnloadModel(playerModel);
     for (int i = 0; i < 3; i++) UnloadModel(tileModel[i]);
+    for (int i = 0; i < 2; i++) UnloadModel(arrows[i]);
     CloseWindow();
 
     return 0;
