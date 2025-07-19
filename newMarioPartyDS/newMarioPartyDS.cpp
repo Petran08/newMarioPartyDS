@@ -45,6 +45,7 @@ int tilesToMove = 0;
 bool choosingDirection = false;
 static std::random_device rd;
 static std::mt19937 gen(rd());
+unsigned int frameCounter; //for arrow movement
 
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
@@ -92,7 +93,7 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         move = Vector3Scale(Vector3Normalize(move), cameraSpeed);
         camera.position = Vector3Add(camera.position, move);
         
-        //camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, 0.0f });
+        //camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, -4.0f });
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -155,11 +156,11 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
             {
                 if (direction == i)
                 {
-                    DrawModelEx(arrows[0], tiles[tiles[currentTile].nextTile[i]].position, Vector3{0.0f, 1.0f, 0.0f}, 0.0f, Vector3{0.2f, 0.2f, 0.2f}, WHITE);
+                    DrawModelEx(arrows[0], Vector3Add(tiles[tiles[currentTile].nextTile[i]].position, Vector3{0.0f, 2.5f + sin(frameCounter * DEG2RAD), 0.0f}), Vector3{0.0f, 0.0f, 1.0f}, -90.0f, Vector3{0.2f, 0.2f, 0.2f}, WHITE);
                 }
                 else
                 {
-                    DrawModelEx(arrows[1], tiles[tiles[currentTile].nextTile[i]].position, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 0.2f, 0.2f, 0.2f }, WHITE);
+                    DrawModelEx(arrows[1], Vector3Add(tiles[tiles[currentTile].nextTile[i]].position, Vector3{ 0.0f, 2.5f, 0.0f }), Vector3{ 0.0f, 0.0f, 1.0f }, -90.0f, Vector3{ 0.2f, 0.2f, 0.2f }, WHITE);
                 }
             }
         }
@@ -266,12 +267,15 @@ void movePlayer()
 
     if (tiles[currentTile].maxDir > 1 && pointsAreClose(myPlayer.position, tiles[currentTile].position))
     {
+        frameCounter = 0;
         choosingDirection = true;
         while (choosingDirection)
         {
             renderScreen(currentState, model, playerModel, tileModel, "dirChoosing");
+            frameCounter++;
             keyboardInput();
         }
+        frameCounter = 0;
     }
 
     Vector3 startpos = myPlayer.position;
