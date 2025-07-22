@@ -1,7 +1,10 @@
 #pragma once
 #include "raylib.h"
+#include <fstream>
 #include <string>
 #include <vector>
+
+void readTileData();
 
 class boardTiles
 {
@@ -12,6 +15,7 @@ public:
 	bool jumpOnNext = false;
 	float jumpHeight;
 	int maxDir = 1;
+	bool countDown = true;
 };
 
 extern std::vector<boardTiles>;

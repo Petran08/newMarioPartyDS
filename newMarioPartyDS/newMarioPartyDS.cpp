@@ -210,13 +210,13 @@ void updatePlayerPos()
     }
     else if (isMoving && (pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) || passedTile()))
     {
-        myPlayer.position.x = round(myPlayer.position.x);
-        myPlayer.position.y = round(myPlayer.position.y);
-        myPlayer.position.z = round(myPlayer.position.z);
         currentTile = tiles[currentTile].nextTile[direction];
+        tilesToMove -= 1 * (tiles[currentTile].countDown);
+        myPlayer.position.x = tiles[currentTile].position.x;
+        myPlayer.position.y = tiles[currentTile].position.y;
+        myPlayer.position.z = tiles[currentTile].position.z;
         direction = 0;
         isMoving = false;
-        tilesToMove--;
     }
     else
     {
@@ -353,6 +353,7 @@ void initTiles()
     initTile.maxDir = 1;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
+    initTile.countDown = true;
     tiles.push_back(initTile);
 
     initTile.position = { 0.0f, 0.0f, 3.0f };
@@ -361,6 +362,7 @@ void initTiles()
     initTile.maxDir = 1;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 3;
+    initTile.countDown = true;
     tiles.push_back(initTile);
 
     initTile.position = { 3.0f, 3.0f, 3.0f };
@@ -370,14 +372,16 @@ void initTiles()
     initTile.maxDir = 2;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 4;
+    initTile.countDown = false;
     tiles.push_back(initTile);
 
-    initTile.position = { 6.0f, 2.0f, 3.0f };
+    initTile.position = { 6.0f, 1.5f, 3.0f };
     initTile.type = "blue";
     initTile.nextTile[0] = 4;
     initTile.maxDir = 1;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 3;
+    initTile.countDown = true;
     tiles.push_back(initTile);
     
     initTile.position = { 6.0f, 0.0f, 6.0f };
@@ -385,6 +389,7 @@ void initTiles()
     initTile.nextTile[0] = 5;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
+    initTile.countDown = true;
     tiles.push_back(initTile);
 
     initTile.position = { 3.0f, 0.0f, 6.0f };
@@ -394,11 +399,14 @@ void initTiles()
     initTile.maxDir = 2;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
+    initTile.countDown = false;
     tiles.push_back(initTile);
 }
 
 int main()
 {
+    readTileData();
+
     fout << "just for debuging \n";
 
     initTiles();

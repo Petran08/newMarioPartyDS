@@ -36,4 +36,7 @@
   <ItemGroup>
     <None Include="position.dbg" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="tiles.txt" />
+  </ItemGroup>
 </Project>
