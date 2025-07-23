@@ -10,12 +10,12 @@ class boardTiles
 {
 public:
 	Vector3 position;
-	std::string type;
+	std::string type = "green";
 	int nextTile[4];
 	bool jumpOnNext = false;
 	float jumpHeight;
 	int maxDir = 1;
-	bool countDown = true;
+	short int countDown = 1;
 };
 
-extern std::vector<boardTiles>;
+extern std::vector<boardTiles> tiles;

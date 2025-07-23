@@ -20,7 +20,7 @@ enum class gameState {
     RESULTS
 } currentState;
 
-std::vector<boardTiles> tiles;
+//std::vector<boardTiles> tiles;
 
 Camera3D camera = { 0 };
 
@@ -66,14 +66,7 @@ float returny(float x)
 
 bool passedTile()
 {
-    if ((tiles[tiles[currentTile].nextTile[direction]].position.x - myPlayer.position.x) / speedx <= 0 || /*(tiles[tiles[currentTile].nextTile[0]].position.y - myPlayer.position.y) / speedy <= 0 ||*/ (tiles[tiles[currentTile].nextTile[direction]].position.z - myPlayer.position.z) / speedz <= 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return ((tiles[tiles[currentTile].nextTile[direction]].position.x - myPlayer.position.x) / speedx <= 0 || /*(tiles[tiles[currentTile].nextTile[0]].position.y - myPlayer.position.y) / speedy <= 0 ||*/ (tiles[tiles[currentTile].nextTile[direction]].position.z - myPlayer.position.z) / speedz <= 0);
 }
 
 void renderScreen(gameState state, Model model, Model player, Model tilesType[3], std::string mode = "none")
@@ -85,15 +78,15 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
         move = { 0 };
 
-        if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
+        /*if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
         if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
         if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
         if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
 
         move = Vector3Scale(Vector3Normalize(move), cameraSpeed);
         camera.position = Vector3Add(camera.position, move);
-        
-        //camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, -4.0f });
+        */
+        camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, -4.0f });
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -129,15 +122,15 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         {
             if (tiles[i].type == "blue")
             {
-                DrawModel(tilesType[0], tiles[i].position, 0.1f, WHITE);
+                DrawModel(tilesType[0], tiles[i].position, 0.2f, WHITE);
             }
             else if (tiles[i].type == "red")
             {
-                DrawModel(tilesType[1], tiles[i].position, 0.1f, WHITE);
+                DrawModel(tilesType[1], tiles[i].position, 0.2f, WHITE);
             }
             else if (tiles[i].type == "green")
             {
-                DrawModel(tilesType[2], tiles[i].position, 0.1f, WHITE);
+                DrawModel(tilesType[2], tiles[i].position, 0.2f, WHITE);
             }
         }
 
@@ -353,7 +346,7 @@ void initTiles()
     initTile.maxDir = 1;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
-    initTile.countDown = true;
+    initTile.countDown = 1;
     tiles.push_back(initTile);
 
     initTile.position = { 0.0f, 0.0f, 3.0f };
@@ -362,7 +355,7 @@ void initTiles()
     initTile.maxDir = 1;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 3;
-    initTile.countDown = true;
+    initTile.countDown = 1;
     tiles.push_back(initTile);
 
     initTile.position = { 3.0f, 3.0f, 3.0f };
@@ -372,7 +365,7 @@ void initTiles()
     initTile.maxDir = 2;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 4;
-    initTile.countDown = false;
+    initTile.countDown = 0;
     tiles.push_back(initTile);
 
     initTile.position = { 6.0f, 1.5f, 3.0f };
@@ -381,15 +374,16 @@ void initTiles()
     initTile.maxDir = 1;
     initTile.jumpOnNext = true;
     initTile.jumpHeight = 3;
-    initTile.countDown = true;
+    initTile.countDown = 1;
     tiles.push_back(initTile);
     
     initTile.position = { 6.0f, 0.0f, 6.0f };
     initTile.type = "blue";
     initTile.nextTile[0] = 5;
+    initTile.maxDir = 1;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
-    initTile.countDown = true;
+    initTile.countDown = 1;
     tiles.push_back(initTile);
 
     initTile.position = { 3.0f, 0.0f, 6.0f };
@@ -399,7 +393,7 @@ void initTiles()
     initTile.maxDir = 2;
     initTile.jumpOnNext = false;
     initTile.jumpHeight = 0;
-    initTile.countDown = false;
+    initTile.countDown = 0;
     tiles.push_back(initTile);
 }
 
@@ -409,7 +403,7 @@ int main()
 
     fout << "just for debuging \n";
 
-    initTiles();
+    //initTiles();
 
     currentState = gameState::BOARD;
 

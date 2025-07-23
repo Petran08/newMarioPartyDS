@@ -1,1 +1,55 @@
-hi
+nrTiles 6
+
+0
+position  0.0 0.0 0.0
+type green
+maxDir 1
+nextTiles 1
+jumpOnNext 0
+jumpHeight 0
+countDown 1
+
+1
+position  0.0 0.0 3.0
+type red
+maxDir 1
+nextTiles 2
+jumpOnNext 1
+jumpHeight 3
+countDown 1
+
+2
+position  3.0 3.0 3.0
+type blue
+maxDir 2
+nextTiles 0 3
+jumpOnNext 1
+jumpHeight 4
+countDown 0
+
+3
+position  6.0 1.5 3.0
+type green
+maxDir 1
+nextTiles 4
+jumpOnNext 1
+jumpHeight 3
+countDown 1
+
+4
+position  6.0 0.0 6.0
+type green
+maxDir 1
+nextTiles 5
+jumpOnNext 0
+jumpHeight 0
+countDown 1
+
+5
+position  3.0 0.0 6.0
+type green
+maxDir 2
+nextTiles 0 1
+jumpOnNext 0
+jumpHeight 0
+countDown 0
