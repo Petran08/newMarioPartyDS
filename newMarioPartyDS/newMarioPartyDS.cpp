@@ -336,74 +336,11 @@ void movePlayer()
     }
 }
 
-void initTiles()
-{
-    boardTiles initTile;
-    
-    initTile.position = { 0.0f, 0.0f, 0.0f };
-    initTile.type = "blue";
-    initTile.nextTile[0] = 1;
-    initTile.maxDir = 1;
-    initTile.jumpOnNext = false;
-    initTile.jumpHeight = 0;
-    initTile.countDown = 1;
-    tiles.push_back(initTile);
-
-    initTile.position = { 0.0f, 0.0f, 3.0f };
-    initTile.type = "red";
-    initTile.nextTile[0] = 2;
-    initTile.maxDir = 1;
-    initTile.jumpOnNext = true;
-    initTile.jumpHeight = 3;
-    initTile.countDown = 1;
-    tiles.push_back(initTile);
-
-    initTile.position = { 3.0f, 3.0f, 3.0f };
-    initTile.type = "green";
-    initTile.nextTile[0] = 0;
-    initTile.nextTile[1] = 3;
-    initTile.maxDir = 2;
-    initTile.jumpOnNext = true;
-    initTile.jumpHeight = 4;
-    initTile.countDown = 0;
-    tiles.push_back(initTile);
-
-    initTile.position = { 6.0f, 1.5f, 3.0f };
-    initTile.type = "blue";
-    initTile.nextTile[0] = 4;
-    initTile.maxDir = 1;
-    initTile.jumpOnNext = true;
-    initTile.jumpHeight = 3;
-    initTile.countDown = 1;
-    tiles.push_back(initTile);
-    
-    initTile.position = { 6.0f, 0.0f, 6.0f };
-    initTile.type = "blue";
-    initTile.nextTile[0] = 5;
-    initTile.maxDir = 1;
-    initTile.jumpOnNext = false;
-    initTile.jumpHeight = 0;
-    initTile.countDown = 1;
-    tiles.push_back(initTile);
-
-    initTile.position = { 3.0f, 0.0f, 6.0f };
-    initTile.type = "red";
-    initTile.nextTile[0] = 0;
-    initTile.nextTile[1] = 1;
-    initTile.maxDir = 2;
-    initTile.jumpOnNext = false;
-    initTile.jumpHeight = 0;
-    initTile.countDown = 0;
-    tiles.push_back(initTile);
-}
-
 int main()
 {
     readTileData();
 
     fout << "just for debuging \n";
-
-    //initTiles();
 
     currentState = gameState::BOARD;
 
