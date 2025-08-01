@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-void readTileData();
+void readTileData(std::string boardName);
 
 class boardTiles
 {
@@ -19,3 +19,10 @@ public:
 };
 
 extern std::vector<boardTiles> tiles;
+
+
+//if tiles size = 0 add first tile, next tile 0
+//select tile with p/l
+//move to another position with arrow keys, space and shift
+//press m, add tiles.size to next tile in the selected tile(at maxDir position) and increase maxDir for selected tile
+//push back new tile at player position, type green

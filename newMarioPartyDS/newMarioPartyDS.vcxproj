@@ -139,7 +139,7 @@
     <None Include="position.dbg" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="tiles.txt" />
+    <Text Include="test_board.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -37,6 +37,6 @@
     <None Include="position.dbg" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="tiles.txt" />
+    <Text Include="test_board.txt" />
   </ItemGroup>
 </Project>

@@ -22,7 +22,13 @@ enum class gameState {
 
 //std::vector<boardTiles> tiles;
 
+//in blender
+//x +, y -
+
 Camera3D camera = { 0 };
+
+std::string boardNames[] = { "test_board", "mp7_tutorial_board" };
+unsigned short int boardId = 0;
 
 Vector3 modelPosition = { 0.0f, 0.0f, 0.0f };
 Vector3 playerPosition = { 0.0f, 0.0f, 0.0f };
@@ -93,6 +99,8 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
         BeginMode3D(camera);
 
         DrawModel(model, modelPosition, 1.0f, WHITE);
+
+        //DrawLine3D(myPlayer.position, Vector3{ 0, 0 , 0 }, BLACK);
 
         // Update rotation angles for smooth rotation
         myPlayer.rotationX = 0.00f;
@@ -338,7 +346,8 @@ void movePlayer()
 
 int main()
 {
-    readTileData();
+
+    readTileData(boardNames[boardId]);
 
     fout << "just for debuging \n";
 
@@ -350,7 +359,8 @@ int main()
     myPlayer.position = playerPosition;
 
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
-    model = LoadModel("test_board.glb");
+    //model = LoadModel("test_board.glb");
+    model = LoadModel((boardNames[boardId] + ".glb").c_str());
     playerModel = LoadModel("mario_model.glb");
     tileModel[0] = LoadModel("blue_tile.glb");
     tileModel[1] = LoadModel("red_tile.glb");

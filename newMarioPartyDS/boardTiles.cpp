@@ -6,9 +6,9 @@
 
 std::vector<boardTiles> tiles;
 
-void readTileData()
+void readTileData(std::string boardName)
 {
-	std::ifstream readTile("tiles.txt");
+	std::ifstream readTile(boardName + ".txt");
 	std::string useless;
 	boardTiles init;
 	readTile >> useless;
