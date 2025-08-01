@@ -30,6 +30,9 @@ Camera3D camera = { 0 };
 std::string boardNames[] = { "test_board", "mp7_tutorial_board" };
 unsigned short int boardId = 0;
 
+const int screenWidth = 1280;
+const int screenHeight = 720;
+
 Vector3 modelPosition = { 0.0f, 0.0f, 0.0f };
 Vector3 playerPosition = { 0.0f, 0.0f, 0.0f };
 float cameraSpeed = 0.2f;
@@ -52,6 +55,7 @@ bool choosingDirection = false;
 static std::random_device rd;
 static std::mt19937 gen(rd());
 unsigned int frameCounter; //for arrow movement
+float fps;
 
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
@@ -180,6 +184,7 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
             debug << "direction: " << direction << '\n';
             debug << "tiles to move: " << tilesToMove << '\n';
             debug << "is moving: " << isMoving << '\n';
+            debug << "FPS: " << fps << '\n';
 
             DrawText(debug.str().c_str(), 10, 10, 35, BLACK);
         }
@@ -353,9 +358,6 @@ int main()
 
     currentState = gameState::BOARD;
 
-    const int screenWidth = 1280;
-    const int screenHeight = 720;
-
     myPlayer.position = playerPosition;
 
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
@@ -378,6 +380,7 @@ int main()
 
     while (!WindowShouldClose())
     {
+        fps = GetFPS();
         switch (currentState)
         {
         case gameState::MENU:
