@@ -11,9 +11,9 @@ class boardTiles
 public:
 	Vector3 position;
 	std::string type = "green";
-	int nextTile[4];
+	int nextTile[4] = {0};
 	bool jumpOnNext = false;
-	float jumpHeight;
+	float jumpHeight = 0;
 	int maxDir = 1;
 	short int countDown = 1;
 };

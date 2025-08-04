@@ -38,5 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="test_board.txt" />
+    <Text Include="mp7_tutorial_board.txt" />
   </ItemGroup>
 </Project>

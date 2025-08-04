@@ -17,7 +17,8 @@ enum class gameState {
     MENU,
     BOARD,
     MINIGAME,
-    RESULTS
+    RESULTS,
+    EDIT  //dev mode only
 } currentState;
 
 //std::vector<boardTiles> tiles;
@@ -28,7 +29,8 @@ enum class gameState {
 Camera3D camera = { 0 };
 
 std::string boardNames[] = { "test_board", "mp7_tutorial_board" };
-unsigned short int boardId = 0;
+unsigned short int boardId = 1;
+unsigned short int maxId = 2;//nr boards
 
 const int screenWidth = 1280;
 const int screenHeight = 720;
@@ -36,11 +38,12 @@ const int screenHeight = 720;
 Vector3 modelPosition = { 0.0f, 0.0f, 0.0f };
 Vector3 playerPosition = { 0.0f, 0.0f, 0.0f };
 float cameraSpeed = 0.2f;
-float playerSpeed = 120.0f; // time to go to next tile in frames(120fps)
+float playerSpeed = 240.0f; // time to go to next tile in frames(120fps)
 Vector3 forward = Vector3Subtract(camera.target, camera.position);
 Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
 bool aboveTile = false;
 Vector3 move = { 0 };
+Vector3 mPointE; //mouse hover(dev only(for now))
 short int currentTile = 0;
 float speedx, speedy, speedz;
 bool isMoving = false;
@@ -56,6 +59,7 @@ static std::random_device rd;
 static std::mt19937 gen(rd());
 unsigned int frameCounter; //for arrow movement
 float fps;
+boardTiles initE; //for dev only
 
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
@@ -67,6 +71,11 @@ bool pointsAreClose(Vector3 p1, Vector3 p2)
 float distXZ(Vector3 p1, Vector3 p2)
 {
     return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.z - p2.z) * (p1.z - p2.z));
+}
+
+double roundTo2Decimals(float value) 
+{
+    return std::round(value * 100.0) / 100.0;
 }
 
 float returny(float x)
@@ -81,24 +90,56 @@ bool passedTile()
 
 void renderScreen(gameState state, Model model, Model player, Model tilesType[3], std::string mode = "none")
 {
-    if (state == gameState::BOARD)
+    if (state == gameState::BOARD || state == gameState::EDIT)
     {
         forward = Vector3Subtract(camera.target, camera.position);
 
         right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
         move = { 0 };
 
-        /*if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
-        if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
-        if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
-        if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
+        if(state == gameState::EDIT)
+        {
+            Vector2 mouseDelta = GetMouseDelta();
+            float sensitivity = 0.003f;
+            Vector3 forward = Vector3Subtract(camera.target, camera.position);
+            float yaw = atan2f(forward.z, forward.x);
+            float pitch = asinf(forward.y / Vector3Length(forward));
 
-        move = Vector3Scale(Vector3Normalize(move), cameraSpeed);
-        camera.position = Vector3Add(camera.position, move);
-        */
-        camera.position = Vector3Add(myPlayer.position, Vector3{ -12.0f, 8.0f, -4.0f });
+            yaw += mouseDelta.x * sensitivity;
+            pitch -= mouseDelta.y * sensitivity;
+
+            // Clamp pitch
+            if (pitch > 1.5f) pitch = 1.5f;
+            if (pitch < -1.5f) pitch = -1.5f;
+
+            forward.x = cosf(pitch) * cosf(yaw);
+            forward.y = sinf(pitch);
+            forward.z = cosf(pitch) * sinf(yaw);
+            forward = Vector3Normalize(forward);
+
+            camera.target = Vector3Add(camera.position, forward);
+
+            // WASD Movement
+            Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
+            Vector3 move = { 0 };
+
+            if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
+            if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
+            if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
+            if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
+
+            float speed = 0.1f;
+            move = Vector3Scale(Vector3Normalize(move), speed);
+            camera.position = Vector3Add(camera.position, move);
+            camera.target = Vector3Add(camera.position, forward);
+        }
+        else
+        {
+            camera.position = Vector3Add(myPlayer.position, Vector3{ 0.0f, 6.0f, 14.0f });
+        }
+
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLUE);
 
         BeginMode3D(camera);
 
@@ -170,17 +211,41 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
             }
         }
 
+
+        if (state == gameState::EDIT)
+        {
+            Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
+
+            model.transform = MatrixTranslate(0, 0, 0);
+
+            for (int q = 0; q < model.meshCount; q++)
+            {
+                RayCollision collision = GetRayCollisionMesh(mouseRay, model.meshes[q], model.transform);
+
+                if (collision.hit) {
+                    mPointE = collision.point;
+                    DrawModel(tilesType[2], mPointE, 0.2f, WHITE);
+                    q = model.meshCount + 4;
+                    break;
+                }
+            }
+        }
+
         EndMode3D();
 
+        if(IsCursorHidden())
+            DrawCircle(GetMouseX(), GetMouseY(), 10.0f, RED);
 
         if(mode=="debug_text" || mode == "dirChoosing")
         {
             std::stringstream debug;
             debug << "player pos: " << myPlayer.position.x << " " << myPlayer.position.y << " " << myPlayer.position.z << '\n';
-            debug << "tile pos: " << tiles[tiles[currentTile].nextTile[direction]].position.x << " " << tiles[tiles[currentTile].nextTile[direction]].position.y << " " << tiles[tiles[currentTile].nextTile[direction]].position.z << '\n';
-            debug << "points are close: " << pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) << "\n";
-            debug << "passed tile: " << passedTile() << '\n';
-            debug << "maxDir: " << tiles[currentTile].maxDir << '\n';
+            //debug << "tile pos: " << tiles[tiles[currentTile].nextTile[direction]].position.x << " " << tiles[tiles[currentTile].nextTile[direction]].position.y << " " << tiles[tiles[currentTile].nextTile[direction]].position.z << '\n';
+            //debug << "points are close: " << pointsAreClose(myPlayer.position, tiles[tiles[currentTile].nextTile[direction]].position) << "\n";
+            //debug << "passed tile: " << passedTile() << '\n';
+            //debug << "maxDir: " << tiles[currentTile].maxDir << '\n';
+            debug << "nextTile: " << tiles[currentTile].nextTile[direction] << '\n';
+            debug << "currentTile: " << currentTile << '\n';
             debug << "direction: " << direction << '\n';
             debug << "tiles to move: " << tilesToMove << '\n';
             debug << "is moving: " << isMoving << '\n';
@@ -263,6 +328,16 @@ bool keyboardInput()
         std::uniform_int_distribution<int> distr(1, 10);
         int roll = distr(gen);
         tilesToMove = roll;
+    }
+    if (IsMouseButtonPressed(MouseButton(MOUSE_BUTTON_MIDDLE)))
+    {
+        if (currentState == gameState::BOARD)
+        {
+            currentState = gameState::EDIT;
+            //tiles.clear();
+        }
+        else if (currentState == gameState::EDIT)
+            currentState = gameState::BOARD;
     }
     return false;
 }
@@ -349,6 +424,33 @@ void movePlayer()
     }
 }
 
+void mouseInputE() //for dev only
+{
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        initE.position = mPointE;
+        tiles.push_back(initE);
+        std::cout << tiles.size();
+    }
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        std::ofstream write(boardNames[boardId] + ".txt");
+        write << "nrTiles " << tiles.size() <<"\n \n";
+        for (int i = 0; i < tiles.size(); i++)
+        {
+            write << i << '\n';
+            write << "position " << roundTo2Decimals(tiles[i].position.x) << " " << roundTo2Decimals(tiles[i].position.y) << " " << roundTo2Decimals(tiles[i].position.z) << '\n';
+            write << "type green\n";
+            write << "maxDir 1\n";
+            write << "nextTiles 0\n";
+            write << "jumpOnNext 0\n";
+            write << "jumpHeight 0\n";
+            write << "countDown 1\n";
+            write << '\n';
+        }
+    }
+}
+
 int main()
 {
 
@@ -358,9 +460,15 @@ int main()
 
     currentState = gameState::BOARD;
 
+    playerPosition = tiles[0].position;
+
     myPlayer.position = playerPosition;
 
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
+
+    //HideCursor();
+    //DisableCursor();
+
     //model = LoadModel("test_board.glb");
     model = LoadModel((boardNames[boardId] + ".glb").c_str());
     playerModel = LoadModel("mario_model.glb");
@@ -370,7 +478,7 @@ int main()
     arrows[0] = LoadModel("solid_arrow.glb");
     arrows[1] = LoadModel("transparent_arrow.glb");
 
-    camera.position = { 5.0f, 5.0f, 5.0f };
+    camera.position = Vector3Add(myPlayer.position, Vector3{ 0.0f, 6.0f, 14.0f });
     camera.target = { 0.0f, 0.0f, 0.0f };
     camera.up = { 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
@@ -397,13 +505,17 @@ int main()
             {
                 movePlayer();
             }
-            
             break;
         case gameState::MINIGAME:
             // minigames
             break;
         case gameState::RESULTS:
             // results
+            break;
+        case gameState::EDIT:
+            renderScreen(currentState, model, playerModel, tileModel, "debug_text");
+            keyboardInput();
+            mouseInputE();
             break;
         }
     }
