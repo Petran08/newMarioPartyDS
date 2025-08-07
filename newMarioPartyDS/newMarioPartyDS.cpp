@@ -61,6 +61,9 @@ unsigned int frameCounter; //for arrow movement
 float fps;
 boardTiles initE; //for dev only
 
+Texture2D cursor;
+float cursorSize = 20;
+
 player myPlayer;
 bool pointsAreClose(Vector3 p1, Vector3 p2)
 {
@@ -233,8 +236,16 @@ void renderScreen(gameState state, Model model, Model player, Model tilesType[3]
 
         EndMode3D();
 
+        Vector2 mouse = GetMousePosition();
+
         if(IsCursorHidden())
-            DrawCircle(GetMouseX(), GetMouseY(), 10.0f, RED);
+        {
+            DrawTextureEx(cursor, Vector2Add(Vector2{ -cursorSize, -cursorSize }, mouse), 0, 0.001 * cursorSize, WHITE);
+            DrawTextureEx(cursor, Vector2Add(Vector2{ cursorSize, -cursorSize }, mouse), 90, 0.001 * cursorSize, WHITE);
+            DrawTextureEx(cursor, Vector2Add(Vector2{ cursorSize, cursorSize }, mouse), 180, 0.001 * cursorSize, WHITE);
+            DrawTextureEx(cursor, Vector2Add(Vector2{ -cursorSize, cursorSize }, mouse), 270, 0.001 * cursorSize, WHITE);
+            DrawCircle(mouse.x, mouse.y, cursorSize / 2, RED);
+        }
 
         if(mode=="debug_text" || mode == "dirChoosing")
         {
@@ -466,7 +477,7 @@ int main()
 
     InitWindow(screenWidth, screenHeight, "New Mario Party DS");
 
-    //HideCursor();
+    HideCursor();
     //DisableCursor();
 
     //model = LoadModel("test_board.glb");
@@ -483,6 +494,8 @@ int main()
     camera.up = { 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
+
+    cursor = LoadTexture("cursor.png");
 
     SetTargetFPS(120);
 
